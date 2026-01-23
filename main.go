@@ -107,26 +107,29 @@ func updateCategory(w http.ResponseWriter, r *http.Request) {
 			"status":  "error",
 			"message": "Invalid category ID",
 		})
+		return
 	}
 	for _, category := range categories {
 		if category.ID == id {
-			var category Category
-			err := json.NewDecoder(r.Body).Decode(&category)
+			var updatedCategory Category
+			err := json.NewDecoder(r.Body).Decode(&updatedCategory)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				json.NewEncoder(w).Encode(map[string]string{
 					"status":  "error",
 					"message": "Invalid request body",
 				})
+				return
 			}
-			for i, c := range categories {
-				if c.ID == id {
-					categories[i] = category
+			for i, currentCategory := range categories {
+				if currentCategory.ID == id {
+					updatedCategory.ID = currentCategory.ID
+					categories[i] = updatedCategory
 					break
 				}
 			}
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(category)
+			json.NewEncoder(w).Encode(updatedCategory)
 			return
 		}
 	}
@@ -217,8 +220,8 @@ func updateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, product := range products {
 		if product.ID == id {
-			var product Product
-			err := json.NewDecoder(r.Body).Decode(&product)
+			var updatedProduct Product
+			err := json.NewDecoder(r.Body).Decode(&updatedProduct)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				json.NewEncoder(w).Encode(map[string]string{
@@ -226,14 +229,17 @@ func updateProduct(w http.ResponseWriter, r *http.Request) {
 					"message": "Invalid request body",
 				})
 			}
-			for i, p := range products {
-				if p.ID == id {
-					products[i] = product
+			for i, currentProduct := range products {
+				if currentProduct.ID == id {
+					//prevent update ID
+					updatedProduct.ID = currentProduct.ID
+					updatedProduct.Category = currentProduct.Category
+					products[i] = updatedProduct
 					break
 				}
 			}
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(product)
+			json.NewEncoder(w).Encode(updatedProduct)
 			return
 		}
 	}
