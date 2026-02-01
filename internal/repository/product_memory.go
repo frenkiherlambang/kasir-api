@@ -40,10 +40,19 @@ func (r *ProductMemoryRepo) GetByID(id int) (*domain.Product, error) {
 	return nil, ErrNotFound
 }
 
-// Create adds a new product. Category must be resolved by caller (category ID set).
+// Create adds a new product. Category must be resolved by caller. If p.ID is 0, assigns the next ID.
 func (r *ProductMemoryRepo) Create(p domain.Product) (domain.Product, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if p.ID == 0 {
+		maxID := 0
+		for _, prod := range r.data {
+			if prod.ID > maxID {
+				maxID = prod.ID
+			}
+		}
+		p.ID = maxID + 1
+	}
 	r.data = append(r.data, p)
 	return p, nil
 }

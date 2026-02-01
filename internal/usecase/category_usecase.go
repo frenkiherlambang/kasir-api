@@ -25,19 +25,8 @@ func (u *CategoryUsecase) GetByID(id int) (*domain.Category, error) {
 	return u.repo.GetByID(id)
 }
 
-// Create creates a new category and assigns the next ID.
+// Create creates a new category. The repository assigns and returns the new ID.
 func (u *CategoryUsecase) Create(c domain.Category) (domain.Category, error) {
-	all, err := u.repo.GetAll()
-	if err != nil {
-		return domain.Category{}, err
-	}
-	maxID := 0
-	for _, cat := range all {
-		if cat.ID > maxID {
-			maxID = cat.ID
-		}
-	}
-	c.ID = maxID + 1
 	return u.repo.Create(c)
 }
 

@@ -1,32 +1,33 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 
-	"kasir-api/internal/domain"
+	"kasir-api/internal/config"
 	"kasir-api/internal/handler"
 	"kasir-api/internal/repository"
 	"kasir-api/internal/usecase"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
-	// Initial data
-	initialCategories := []domain.Category{
-		{ID: 1, Nama: "Sneakers"},
-		{ID: 2, Nama: "Running"},
-		{ID: 3, Nama: "Casual"},
-	}
-	initialProducts := []domain.Product{
-		{ID: 1, Nama: "Nike Air Max", Harga: 35000000, Stok: 10, Category: initialCategories[0]},
-		{ID: 2, Nama: "Adidas Superstar", Harga: 3000000, Stok: 20, Category: initialCategories[1]},
-		{ID: 3, Nama: "Converse Chuck Taylor", Harga: 4000000, Stok: 15, Category: initialCategories[2]},
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("config: %v", err)
 	}
 
-	// Repositories
-	categoryRepo := repository.NewCategoryMemoryRepo(initialCategories)
-	productRepo := repository.NewProductMemoryRepo(initialProducts)
+	pool, err := pgxpool.New(context.Background(), cfg.DBConn)
+	if err != nil {
+		log.Fatalf("database: %v", err)
+	}
+	defer pool.Close()
+
+	categoryRepo := repository.NewCategoryPG(pool)
+	productRepo := repository.NewProductPG(pool)
 
 	// Use cases
 	categoryUC := usecase.NewCategoryUsecase(categoryRepo)
@@ -104,5 +105,7 @@ func main() {
 		})
 	})
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	addr := ":" + cfg.Port
+	log.Printf("listening on %s", addr)
+	log.Fatal(http.ListenAndServe(addr, nil))
 }

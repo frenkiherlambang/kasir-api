@@ -40,10 +40,19 @@ func (r *CategoryMemoryRepo) GetByID(id int) (*domain.Category, error) {
 	return nil, ErrNotFound
 }
 
-// Create adds a new category (id is set by caller or use case).
+// Create adds a new category. If c.ID is 0, assigns the next ID.
 func (r *CategoryMemoryRepo) Create(c domain.Category) (domain.Category, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if c.ID == 0 {
+		maxID := 0
+		for _, cat := range r.data {
+			if cat.ID > maxID {
+				maxID = cat.ID
+			}
+		}
+		c.ID = maxID + 1
+	}
 	r.data = append(r.data, c)
 	return c, nil
 }

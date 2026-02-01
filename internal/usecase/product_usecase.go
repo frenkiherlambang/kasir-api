@@ -34,6 +34,7 @@ func (u *ProductUsecase) GetByID(id int) (*domain.Product, error) {
 }
 
 // Create creates a new product. Resolves category by ID; returns error if category not found.
+// The repository assigns and returns the new product ID.
 func (u *ProductUsecase) Create(p domain.Product) (domain.Product, error) {
 	cat, err := u.categoryRepo.GetByID(p.Category.ID)
 	if err != nil {
@@ -43,17 +44,6 @@ func (u *ProductUsecase) Create(p domain.Product) (domain.Product, error) {
 		return domain.Product{}, err
 	}
 	p.Category = *cat
-	all, err := u.productRepo.GetAll()
-	if err != nil {
-		return domain.Product{}, err
-	}
-	maxID := 0
-	for _, prod := range all {
-		if prod.ID > maxID {
-			maxID = prod.ID
-		}
-	}
-	p.ID = maxID + 1
 	return u.productRepo.Create(p)
 }
 
