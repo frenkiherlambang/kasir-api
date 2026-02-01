@@ -9,12 +9,15 @@ API REST sederhana untuk sistem kasir (Point of Sale) yang dibangun menggunakan 
 - ✅ Relasi antara Produk dan Kategori
 - ✅ Health Check Endpoint
 - ✅ RESTful API Design
+- ✅ PostgreSQL (pgx) untuk persistence—kompatibel dengan Supabase
+- ✅ Konfigurasi via Viper (.env + environment variables)
 
 ## 🚀 Memulai
 
 ### Prasyarat
 
 - Go 1.22.2 atau lebih baru
+- PostgreSQL ([Supabase](https://supabase.com))
 - Terminal/Command Line
 
 ### Instalasi
@@ -25,17 +28,28 @@ git clone <repository-url>
 cd kasir-api
 ```
 
-2. Install dependencies (jika ada):
+2. Install dependencies:
 ```bash
 go mod download
 ```
 
-3. Jalankan aplikasi:
+3. Buat file `.env` di root proyek:
+```
+DB_CONN=postgres://user:password@host:port/database
+PORT=8080
+```
+- `DB_CONN` wajib (connection string ke PostgreSQL/Supabase).
+- `PORT` opsional; default `8080`.
+
+4. Jalankan migrasi schema sekali (mis. di Supabase SQL Editor):
+- Salin dan jalankan isi file `migrations/001_schema.sql`.
+
+5. Jalankan aplikasi:
 ```bash
-go run main.go
+go run .
 ```
 
-Server akan berjalan di `http://localhost:8080`
+Server berjalan di `http://localhost:8080` (atau sesuai `PORT` di `.env`).
 
 ## 📚 Dokumentasi API
 
@@ -245,7 +259,7 @@ Mengecek status API.
 }
 ```
 
-**Catatan:** ID dan Category tidak dapat diubah melalui endpoint ini.
+**Catatan:** ID tidak dapat diubah. Field `category` dapat diikutsertakan (mis. `"category": {"id": 2}`) untuk mengubah kategori produk.
 
 **Response:**
 ```json
@@ -339,37 +353,19 @@ curl -X POST http://localhost:8080/api/products \
 
 ```
 kasir-api/
-├── main.go           # File utama aplikasi
-├── go.mod            # Go module file
-├── category.http     # Contoh request untuk kategori
-├── product.http      # Contoh request untuk produk
-└── readme.md         # Dokumentasi proyek
+├── main.go              # Entry point, wiring HTTP + repos
+├── go.mod
+├── .env                 # DB_CONN, PORT (jangan di-commit)
+├── internal/
+│   ├── config/          # Viper, Load(), Config struct
+│   ├── domain/          # Category, Product
+│   ├── handler/         # HTTP handlers
+│   ├── repository/      # Interface + memory + PostgreSQL (pgx)
+│   └── usecase/         # Business logic
+├── migrations/
+│   └── 001_schema.sql   # Tabel categories & products
+├── category.http
+├── product.http
+└── readme.md
 ```
 
-## ⚠️ Catatan Penting
-
-- Data disimpan dalam memori (in-memory), sehingga data akan hilang saat server di-restart
-- ID otomatis di-generate saat membuat resource baru
-- Saat mengupdate produk, field `category` tidak dapat diubah
-- Pastikan kategori sudah ada sebelum membuat produk dengan kategori tersebut
-
-## 🔮 Pengembangan Selanjutnya
-
-Fitur yang bisa ditambahkan:
-- [ ] Database persistence (PostgreSQL, MySQL, dll)
-- [ ] Authentication & Authorization
-- [ ] Validasi input yang lebih ketat
-- [ ] Pagination untuk list endpoint
-- [ ] Search & Filter
-- [ ] Unit tests
-- [ ] Docker containerization
-- [ ] Logging yang lebih baik
-- [ ] Error handling yang lebih komprehensif
-
-## 📄 Lisensi
-
-Proyek ini dibuat untuk keperluan pembelajaran.
-
-## 👤 Kontributor
-
-Dibuat dengan ❤️ menggunakan Go
