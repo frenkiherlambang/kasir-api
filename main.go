@@ -28,14 +28,17 @@ func main() {
 
 	categoryRepo := repository.NewCategoryPG(pool)
 	productRepo := repository.NewProductPG(pool)
+	transactionRepo := repository.NewTransactionPG(pool)
 
 	// Use cases
 	categoryUC := usecase.NewCategoryUsecase(categoryRepo)
 	productUC := usecase.NewProductUsecase(productRepo, categoryRepo)
+	transactionUC := usecase.NewTransactionUsecase(transactionRepo)
 
 	// Handlers
 	categoryHandler := handler.NewCategoryHandler(categoryUC)
 	productHandler := handler.NewProductHandler(productUC)
+	transactionHandler := handler.NewTransactionHandler(transactionUC)
 
 	// Method not allowed response
 	methodNotAllowed := func(w http.ResponseWriter) {
@@ -93,6 +96,15 @@ func main() {
 		default:
 			methodNotAllowed(w)
 		}
+	})
+
+	// Transaction routes
+	http.HandleFunc("/api/checkout", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			methodNotAllowed(w)
+			return
+		}
+		transactionHandler.HandleCheckout(w, r)
 	})
 
 	// Redirect root to /health
