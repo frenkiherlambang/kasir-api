@@ -11,6 +11,7 @@ import (
 	"kasir-api/internal/repository"
 	"kasir-api/internal/usecase"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -20,7 +21,15 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
-	pool, err := pgxpool.New(context.Background(), cfg.DBConn)
+	poolConfig, err := pgxpool.ParseConfig(cfg.DBConn)
+	if err != nil {
+		log.Fatalf("database config: %v", err)
+	}
+	// Use simple protocol to avoid "prepared statement already exists" (42P05)
+	// when behind PgBouncer/Supabase or with aggressive statement timeouts.
+	poolConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+
+	pool, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
 	if err != nil {
 		log.Fatalf("database: %v", err)
 	}
