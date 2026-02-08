@@ -97,3 +97,49 @@ func (r *TransactionPG) CreateTransaction(items []domain.CheckoutItem) (*domain.
 		Details:     details,
 	}, nil
 }
+
+// GetSummaryHariIni returns today's sales summary: total revenue, transaction count, and best-selling product.
+func (r *TransactionPG) GetSummaryHariIni() (*domain.SummaryHariIni, error) {
+	ctx := context.Background()
+	now := time.Now()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
+
+	var totalRevenue int
+	var totalTransaksi int
+	err := r.pool.QueryRow(ctx,
+		"SELECT COALESCE(SUM(total_amount), 0), COUNT(*) FROM transactions WHERE created_at >= $1 AND created_at < $2",
+		startOfDay, endOfDay).
+		Scan(&totalRevenue, &totalTransaksi)
+	if err != nil {
+		return nil, err
+	}
+
+	out := &domain.SummaryHariIni{
+		TotalRevenue:   totalRevenue,
+		TotalTransaksi: totalTransaksi,
+		ProdukTerlaris: domain.ProdukTerlaris{},
+	}
+
+	var nama string
+	var qtyTerjual int
+	err = r.pool.QueryRow(ctx,
+		`SELECT p.nama, COALESCE(SUM(td.quantity), 0)
+		 FROM transaction_details td
+		 JOIN transactions t ON t.id = td.transaction_id
+		 JOIN products p ON p.id = td.product_id
+		 WHERE t.created_at >= $1 AND t.created_at < $2
+		 GROUP BY td.product_id, p.nama
+		 ORDER BY SUM(td.quantity) DESC
+		 LIMIT 1`,
+		startOfDay, endOfDay).
+		Scan(&nama, &qtyTerjual)
+	if err == nil {
+		out.ProdukTerlaris = domain.ProdukTerlaris{Nama: nama, QtyTerjual: qtyTerjual}
+	}
+	// ErrNoRows means no sales today; leave ProdukTerlaris as zero value
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+	return out, nil
+}

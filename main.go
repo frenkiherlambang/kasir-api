@@ -34,11 +34,13 @@ func main() {
 	categoryUC := usecase.NewCategoryUsecase(categoryRepo)
 	productUC := usecase.NewProductUsecase(productRepo, categoryRepo)
 	transactionUC := usecase.NewTransactionUsecase(transactionRepo)
+	reportUC := usecase.NewReportUsecase(transactionRepo)
 
 	// Handlers
 	categoryHandler := handler.NewCategoryHandler(categoryUC)
 	productHandler := handler.NewProductHandler(productUC)
 	transactionHandler := handler.NewTransactionHandler(transactionUC)
+	reportHandler := handler.NewReportHandler(reportUC)
 
 	// Method not allowed response
 	methodNotAllowed := func(w http.ResponseWriter) {
@@ -106,6 +108,9 @@ func main() {
 		}
 		transactionHandler.HandleCheckout(w, r)
 	})
+
+	// Report routes
+	http.HandleFunc("/api/report/hari-ini", reportHandler.HariIni)
 
 	// Redirect root to /health
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
