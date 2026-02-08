@@ -39,9 +39,10 @@ func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, prod)
 }
 
-// GetAll handles GET /api/products
+// GetAll handles GET /api/products. Optional query: name=Nike to filter by product name.
 func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	prods, err := h.uc.GetAll()
+	name := r.URL.Query().Get("name")
+	prods, err := h.uc.GetAll(name)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return

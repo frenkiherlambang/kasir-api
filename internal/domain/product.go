@@ -6,5 +6,6 @@ type Product struct {
 	Nama     string   `json:"nama"`
 	Harga    int      `json:"harga"`
 	Stok     int      `json:"stok"`
+	Active   bool     `json:"active"`
 	Category Category `json:"category"`
 }

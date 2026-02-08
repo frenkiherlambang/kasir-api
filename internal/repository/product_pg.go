@@ -32,13 +32,19 @@ func scanProduct(scan func(...any) error) (domain.Product, error) {
 	return p, nil
 }
 
-// GetAll returns all products with their category.
-func (r *ProductPG) GetAll() ([]domain.Product, error) {
-	rows, err := r.pool.Query(context.Background(),
-		`SELECT p.id, p.nama, p.harga, p.stok, c.id, c.nama
-		 FROM products p
-		 JOIN categories c ON p.category_id = c.id
-		 ORDER BY p.id`)
+// GetAll returns all products with their category. If name is non-empty, filters by product name (ILIKE).
+func (r *ProductPG) GetAll(name string) ([]domain.Product, error) {
+	query := `SELECT p.id, p.nama, p.harga, p.stok, c.id, c.nama
+		FROM products p
+		JOIN categories c ON p.category_id = c.id`
+	args := []any{}
+	if name != "" {
+		query += ` WHERE p.nama ILIKE '%' || $1 || '%'`
+		args = append(args, name)
+	}
+	query += ` ORDER BY p.id`
+
+	rows, err := r.pool.Query(context.Background(), query, args...)
 	if err != nil {
 		return nil, err
 	}

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"kasir-api/internal/domain"
+	"strings"
 	"sync"
 )
 
@@ -18,12 +19,22 @@ func NewProductMemoryRepo(initial []domain.Product) *ProductMemoryRepo {
 	return &ProductMemoryRepo{data: data}
 }
 
-// GetAll returns all products.
-func (r *ProductMemoryRepo) GetAll() ([]domain.Product, error) {
+// GetAll returns all products. If name is non-empty, filters by product name (substring, case-insensitive).
+func (r *ProductMemoryRepo) GetAll(name string) ([]domain.Product, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	out := make([]domain.Product, len(r.data))
-	copy(out, r.data)
+	if name == "" {
+		out := make([]domain.Product, len(r.data))
+		copy(out, r.data)
+		return out, nil
+	}
+	lower := strings.ToLower(name)
+	var out []domain.Product
+	for _, p := range r.data {
+		if strings.Contains(strings.ToLower(p.Nama), lower) {
+			out = append(out, p)
+		}
+	}
 	return out, nil
 }
 

@@ -23,9 +23,9 @@ func NewProductUsecase(productRepo repository.ProductRepository, categoryRepo re
 	}
 }
 
-// GetAll returns all products.
-func (u *ProductUsecase) GetAll() ([]domain.Product, error) {
-	return u.productRepo.GetAll()
+// GetAll returns all products. If name is non-empty, filters by product name (substring, case-insensitive).
+func (u *ProductUsecase) GetAll(name string) ([]domain.Product, error) {
+	return u.productRepo.GetAll(name)
 }
 
 // GetByID returns a product by ID. Returns repository.ErrNotFound if not found.
